@@ -1,5 +1,7 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Prediction from "./pages/Prediction";
@@ -7,12 +9,19 @@ import Analytics from "./pages/Analytics";
 import Counselling from "./pages/Counselling";
 import Reports from "./pages/Reports";
 
-export default function AppRoutes() {
+function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" />} />
+      <Route path="/" element={<Login />} />
 
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/students" element={<Students />} />
       <Route path="/prediction" element={<Prediction />} />
       <Route path="/analytics" element={<Analytics />} />
@@ -21,3 +30,5 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+
+export default AppRoutes;

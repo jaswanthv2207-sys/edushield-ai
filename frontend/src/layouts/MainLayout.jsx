@@ -1,7 +1,15 @@
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 
 function MainLayout({ children }) {
+  const navigate = useNavigate();
+
+  const logout = () => {
+    localStorage.removeItem("isLoggedIn");
+    navigate("/");
+  };
+
   return (
     <div
       style={{
@@ -15,7 +23,7 @@ function MainLayout({ children }) {
       {/* Main Content */}
       <div
         style={{
-          marginLeft: "270px", // Same width as sidebar
+          marginLeft: "270px",
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
