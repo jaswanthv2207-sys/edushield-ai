@@ -1,390 +1,447 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import MainLayout from "../layouts/MainLayout";
 import RiskBadge from "../components/RiskBadge";
-import api from "../services/api";
+import { predictStudent } from "../services/studentService";
 
 function Prediction() {
-  const { state } = useLocation();
-
-  const [school, setSchool] = useState(state?.school || "School A");
-  const [gender, setGender] = useState(state?.gender || "Male");
-  const [feesPaid, setFeesPaid] = useState("Paid");
-  const [internet, setInternet] = useState("Yes");
-  const [familySupport, setFamilySupport] = useState("Yes");
-  const [higherEducation, setHigherEducation] = useState("Yes");
-  const [medical, setMedical] = useState("Good");
-
-  const [absences, setAbsences] = useState(state ? 100 - state.attendance : 0);
-
-  const [failures, setFailures] = useState(0);
-
-  const [finalGrade, setFinalGrade] = useState(state?.cgpa || "");
+  const { state: student } = useLocation();
 
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [loading, setLoading] = useState(false);
-
-  const predict = async () => {
-    setLoading(true);
-
-    const payload = {
-      Student_ID: state?.id || "STU101",
-      School: school,
-      Gender: gender,
-      Fees_Paid_Status: feesPaid,
-      Internet_Access: internet,
-      Family_Support: familySupport,
-      Wants_Higher_Education: higherEducation,
-      Medical_Status: medical,
-      Number_of_Absences: Number(absences),
-      Number_of_Failures: Number(failures),
-      Final_Grade: Number(finalGrade),
-    };
-
-    console.log("Sending:", payload);
-
-    try {
-      const response = await api.post("/predict", payload);
-
-      console.log("Backend Response:", response.data);
-
-      setResult(response.data);
-    } catch (error) {
-      console.error(error);
-
-      if (error.response) {
-        console.log(error.response.data);
+  useEffect(() => {
+    async function runPrediction() {
+      if (!student) {
+        window.location.href = "/students";
+        return;
       }
 
-      console.log(error.response);
+      try {
+        const response = await predictStudent(student);
 
-      alert(
-        error.response?.data?.detail ||
-          error.response?.data?.message ||
-          "Prediction Failed",
-      );
-    } finally {
-      setLoading(false);
+        console.log("Prediction Result:", response);
+
+        setResult(response);
+      } catch (err) {
+        console.error(err);
+        setError("Prediction failed.");
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+
+    runPrediction();
+  }, [student]);
 
   return (
     <MainLayout>
       <h1
         style={{
-          fontSize: 42,
-          marginBottom: 35,
+          fontSize: 40,
+          fontWeight: 700,
+          marginBottom: 30,
         }}
       >
         AI Dropout Prediction
       </h1>
+      {loading && (
+        <div
+          style={{
+            background: "#fff",
+            padding: 40,
+            borderRadius: 16,
+            textAlign: "center",
+            boxShadow: "0 5px 15px rgba(0,0,0,.08)",
+          }}
+        >
+          <h2>Running AI Prediction...</h2>
+        </div>
+      )}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 420px",
-          gap: 30,
-        }}
-      >
-        {/* LEFT */}
+      {error && (
+        <div
+          style={{
+            background: "#FEE2E2",
+            color: "#991B1B",
+            padding: 20,
+            borderRadius: 12,
+          }}
+        >
+          <h2>{error}</h2>
+        </div>
+      )}
 
-        <div style={card}>
-          {state && (
-            <div
+      {!loading && result && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 420px",
+            gap: 30,
+          }}
+        >
+          {/* LEFT PANEL */}
+
+          <div style={card}>
+            <h2
               style={{
-                background: "#EFF6FF",
-                padding: 20,
-                borderRadius: 12,
+                marginTop: 0,
                 marginBottom: 25,
               }}
             >
-              <h3>{state.name}</h3>
+              Student Information
+            </h2>
 
-              <p>
-                <b>District:</b> {state.district}
-              </p>
-
-              <p>
-                <b>Attendance:</b> {state.attendance}%
-              </p>
-
-              <p>
-                <b>CGPA:</b> {state.cgpa}
-              </p>
-            </div>
-          )}
-
-          <h2>Student Details</h2>
-
-          <label style={label}>Gender</label>
-
-          <select
-            style={input}
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-          >
-            <option>Male</option>
-            <option>Female</option>
-          </select>
-
-          <label style={label}>School</label>
-
-          <input
-            style={input}
-            value={school}
-            onChange={(e) => setSchool(e.target.value)}
-          />
-
-          <label style={label}>Fee Payment Status</label>
-
-          <select
-            style={input}
-            value={feesPaid}
-            onChange={(e) => setFeesPaid(e.target.value)}
-          >
-            <option>Paid</option>
-            <option>Unpaid</option>
-          </select>
-
-          <label style={label}>Internet Access</label>
-
-          <select
-            style={input}
-            value={internet}
-            onChange={(e) => setInternet(e.target.value)}
-          >
-            <option>Yes</option>
-            <option>No</option>
-          </select>
-
-          <label style={label}>Family Support</label>
-
-          <select
-            style={input}
-            value={familySupport}
-            onChange={(e) => setFamilySupport(e.target.value)}
-          >
-            <option>Yes</option>
-            <option>No</option>
-          </select>
-
-          <label style={label}>Interested in Higher Education</label>
-
-          <select
-            style={input}
-            value={higherEducation}
-            onChange={(e) => setHigherEducation(e.target.value)}
-          >
-            <option>Yes</option>
-            <option>No</option>
-          </select>
-
-          <label style={label}>Medical Condition</label>
-
-          <select
-            style={input}
-            value={medical}
-            onChange={(e) => setMedical(e.target.value)}
-          >
-            <option>Good</option>
-            <option>Fair</option>
-            <option>Poor</option>
-          </select>
-
-          <label style={label}>Number of Absences</label>
-
-          <input
-            type="number"
-            style={input}
-            value={absences}
-            onChange={(e) => setAbsences(e.target.value)}
-          />
-
-          <label style={label}>Previous Failures</label>
-
-          <input
-            type="number"
-            style={input}
-            value={failures}
-            onChange={(e) => setFailures(e.target.value)}
-          />
-
-          <label style={label}>Final Grade (CGPA)</label>
-
-          <input
-            type="number"
-            step="0.1"
-            style={input}
-            value={finalGrade}
-            onChange={(e) => setFinalGrade(e.target.value)}
-          />
-
-          <button style={button} onClick={predict} disabled={loading}>
-            {loading ? "Predicting..." : "Predict Risk"}
-          </button>
-        </div>
-
-        {/* RIGHT */}
-
-        <div style={card}>
-          <h2>Prediction Result</h2>
-
-          {!result ? (
-            <div
+            <table
               style={{
-                marginTop: 120,
-                textAlign: "center",
-                color: "#64748B",
+                width: "100%",
+                borderCollapse: "collapse",
               }}
             >
-              <h3>No Prediction Yet</h3>
+              <tbody>
+                <tr>
+                  <td style={infoLabel}>Student ID</td>
+                  <td style={infoValue}>{student.Student_ID}</td>
+                </tr>
 
-              <p>
-                Fill the student details and click
-                <b> Predict Risk</b>.
-              </p>
-            </div>
-          ) : (
+                <tr>
+                  <td style={infoLabel}>Name</td>
+                  <td style={infoValue}>{student.Name}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>School</td>
+                  <td style={infoValue}>{student.School}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Gender</td>
+                  <td style={infoValue}>{student.Gender}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Address</td>
+                  <td style={infoValue}>{student.Address}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Absences</td>
+                  <td style={infoValue}>{student.Number_of_Absences}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Failures</td>
+                  <td style={infoValue}>{student.Number_of_Failures}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Final Grade</td>
+                  <td style={infoValue}>{student.Final_Grade}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Fees Paid</td>
+                  <td style={infoValue}>{student.Fees_Paid_Status}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Family Support</td>
+                  <td style={infoValue}>{student.Family_Support}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Internet Access</td>
+                  <td style={infoValue}>{student.Internet_Access}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Higher Education</td>
+                  <td style={infoValue}>{student.Wants_Higher_Education}</td>
+                </tr>
+
+                <tr>
+                  <td style={infoLabel}>Medical Status</td>
+                  <td style={infoValue}>{student.Medical_Status}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {/* RIGHT PANEL */}
+
+          <div style={card}>
+            <h2
+              style={{
+                marginTop: 0,
+                marginBottom: 25,
+              }}
+            >
+              AI Prediction Result
+            </h2>
+
             <div
               style={{
-                marginTop: 25,
+                textAlign: "center",
+                marginBottom: 30,
               }}
             >
               <div
                 style={{
-                  textAlign: "center",
-                  marginBottom: 25,
+                  width: 170,
+                  height: 170,
+                  margin: "0 auto",
+                  borderRadius: "50%",
+                  border: "12px solid",
+                  borderColor:
+                    result.risk_assessment?.risk_score > 70
+                      ? "#DC2626"
+                      : result.risk_assessment?.risk_score > 40
+                        ? "#F59E0B"
+                        : "#16A34A",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "column",
                 }}
               >
                 <h1
                   style={{
-                    fontSize: 60,
                     margin: 0,
+                    fontSize: 50,
                     color:
-                      (result.risk_assessment?.risk_score ?? 0) >= 80
+                      result.risk_assessment?.risk_score > 70
                         ? "#DC2626"
-                        : (result.risk_assessment?.risk_score ?? 0) >= 50
-                          ? "#D97706"
+                        : result.risk_assessment?.risk_score > 40
+                          ? "#F59E0B"
                           : "#16A34A",
                   }}
                 >
                   {result.risk_assessment?.risk_score ?? "--"}%
                 </h1>
 
-                <div style={{ marginTop: 15 }}>
-                  <RiskBadge risk={result.risk_assessment?.risk_score ?? 0} />
-                </div>
-
-                <h2 style={{ marginTop: 20 }}>
-                  {result.risk_assessment?.risk_tier}
-                </h2>
-              </div>
-
-              <hr />
-
-              <div style={{ marginTop: 25 }}>
-                <div
+                <span
                   style={{
-                    background: "#EFF6FF",
-                    padding: 15,
-                    borderRadius: 12,
-                    marginBottom: 20,
+                    color: "#64748B",
+                    fontSize: 14,
                   }}
                 >
-                  <h3>Status</h3>
+                  AI Score
+                </span>
+              </div>
 
-                  <p>{result.counselling_system?.status}</p>
+              <div style={{ marginTop: 15 }}>
+                <RiskBadge
+                  risk={
+                    result.risk_assessment?.risk_tier?.includes("High")
+                      ? "High"
+                      : result.risk_assessment?.risk_tier?.includes("Medium")
+                        ? "Medium"
+                        : "Low"
+                  }
+                />
+              </div>
+
+              <h2 style={{ marginTop: 20 }}>
+                {result.risk_assessment?.risk_tier}
+              </h2>
+
+              <div
+                style={{
+                  marginTop: 15,
+                  background: "#F8FAFC",
+                  padding: 20,
+                  borderRadius: 12,
+                  textAlign: "left",
+                }}
+              >
+                <h3
+                  style={{
+                    marginTop: 0,
+                  }}
+                >
+                  Prediction Summary
+                </h3>
+
+                <p>
+                  The AI model analyzed attendance, academic performance,
+                  socio-economic background, family support and behavioural
+                  indicators to estimate the probability of student dropout.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 25,
+                  background: "#F8FAFC",
+                  borderRadius: 14,
+                  padding: 18,
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#64748B",
+                    fontSize: 15,
+                  }}
+                >
+                  AI Confidence
                 </div>
-                <h3>AI Analysis</h3>
 
-                {result.risk_assessment?.risk_factors?.length ? (
-                  <ul>
-                    {result.risk_assessment.risk_factors.map((factor) => (
-                      <li key={factor}>{factor}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No detailed reasons returned by the model.</p>
-                )}
+                <h1
+                  style={{
+                    color: "#2563EB",
+                    margin: "10px 0",
+                    fontSize: 36,
+                  }}
+                >
+                  {result.risk_assessment?.confidence_score ?? 95}%
+                </h1>
 
-                <br />
-
-                <h3>Recommendations</h3>
-
-                {result.counselling_system?.recommended_actions?.length ? (
-                  <ul>
-                    {result.counselling_system.recommended_actions.map(
-                      (recommendation) => (
-                        <li key={recommendation}>{recommendation}</li>
-                      ),
-                    )}
-                  </ul>
-                ) : (
-                  <ul>
-                    <li>Assign Counsellor</li>
-                    <li>Monitor Attendance</li>
-                    <li>Inform Parents</li>
-                    <li>Academic Mentoring</li>
-                  </ul>
-                )}
-
-                <br />
-
-                <h3>Government Intervention</h3>
-
-                <ul>
-                  {result.counselling_system?.counselor_guidance_notes?.map(
-                    (note) => (
-                      <li key={note}>{note}</li>
-                    ),
-                  )}
-                </ul>
+                <div
+                  style={{
+                    width: "100%",
+                    height: 14,
+                    background: "#E2E8F0",
+                    borderRadius: 20,
+                    marginTop: 20,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${result.risk_assessment?.confidence_score ?? 95}%`,
+                      height: "100%",
+                      background: "#2563EB",
+                      borderRadius: 20,
+                      transition: "width 0.8s ease",
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          )}
+
+            <hr
+              style={{
+                border: "none",
+                borderTop: "1px solid #E2E8F0",
+                marginBottom: 25,
+              }}
+            />
+
+            <div
+              style={{
+                background: "#EFF6FF",
+                padding: 18,
+                borderRadius: 12,
+                marginBottom: 25,
+              }}
+            >
+              <h3
+                style={{
+                  marginTop: 0,
+                }}
+              >
+                Counselling Status
+              </h3>
+
+              <p>{result.counselling_system?.status}</p>
+            </div>
+            <h3>AI Risk Factors</h3>
+
+            {result.risk_assessment?.risk_factors?.length ? (
+              <ul
+                style={{
+                  paddingLeft: 20,
+                  lineHeight: 1.8,
+                }}
+              >
+                {result.risk_assessment.risk_factors.map((factor, index) => (
+                  <li key={index}>{factor}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No risk factors returned by the model.</p>
+            )}
+
+            <br />
+
+            <h3>Recommended Actions</h3>
+
+            {result.counselling_system?.recommended_actions?.length ? (
+              <ul
+                style={{
+                  paddingLeft: 20,
+                  lineHeight: 1.8,
+                }}
+              >
+                {result.counselling_system.recommended_actions.map(
+                  (action, index) => (
+                    <li key={index}>{action}</li>
+                  ),
+                )}
+              </ul>
+            ) : (
+              <p>No recommendations available.</p>
+            )}
+
+            <br />
+
+            <h3>Counsellor Guidance</h3>
+
+            {result.counselling_system?.counselor_guidance_notes?.length ? (
+              <ul
+                style={{
+                  paddingLeft: 20,
+                  lineHeight: 1.8,
+                }}
+              >
+                {result.counselling_system.counselor_guidance_notes.map(
+                  (note, index) => (
+                    <li key={index}>{note}</li>
+                  ),
+                )}
+              </ul>
+            ) : (
+              <p>No guidance available.</p>
+            )}
+            <hr style={{ marginTop: 30 }} />
+
+            <p
+              style={{
+                color: "#64748B",
+                fontSize: 14,
+                textAlign: "center",
+              }}
+            >
+              Prediction generated on {new Date().toLocaleString()}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </MainLayout>
   );
 }
 
 const card = {
-  background: "#fff",
+  background: "#FFFFFF",
   borderRadius: 20,
   padding: 35,
   boxShadow: "0 5px 15px rgba(0,0,0,.08)",
 };
 
-const label = {
-  display: "block",
-  marginTop: 18,
-  marginBottom: 6,
+const infoLabel = {
+  width: "45%",
+  padding: "12px 0",
   fontWeight: "600",
-  color: "#334155",
-  fontSize: "14px",
+  color: "#475569",
+  borderBottom: "1px solid #E2E8F0",
 };
 
-const input = {
-  width: "100%",
-  padding: 15,
-  marginTop: 15,
-  borderRadius: 10,
-  border: "1px solid #CBD5E1",
-  fontSize: 15,
-  boxSizing: "border-box",
-};
-
-const button = {
-  marginTop: 25,
-  background: "#2563EB",
-  color: "white",
-  border: "none",
-  borderRadius: 10,
-  padding: "15px 35px",
-  cursor: "pointer",
-  fontSize: 16,
+const infoValue = {
+  padding: "12px 0",
+  color: "#0F172A",
+  borderBottom: "1px solid #E2E8F0",
 };
 
 export default Prediction;

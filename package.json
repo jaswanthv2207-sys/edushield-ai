@@ -3,6 +3,8 @@
     "axios": "^1.19.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "react-countup": "^6.5.3",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.7.0",
     "recharts": "^3.10.1"

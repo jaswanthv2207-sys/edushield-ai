@@ -1,49 +1,24 @@
 function RiskBadge({ risk }) {
-  let badge = {
-    text: "Low",
-    color: "#15803D",
-    background: "#DCFCE7",
+  const colors = {
+    High: "#DC2626",
+    Medium: "#F59E0B",
+    Low: "#16A34A",
   };
 
-  const value =
-    typeof risk === "number"
-      ? risk
-      : risk === "High"
-        ? 90
-        : risk === "Medium"
-          ? 60
-          : 20;
-
-  if (value >= 80) {
-    badge = {
-      text: "High",
-      color: "#DC2626",
-      background: "#FEE2E2",
-    };
-  } else if (value >= 50) {
-    badge = {
-      text: "Medium",
-      color: "#D97706",
-      background: "#FEF3C7",
-    };
-  }
-
   return (
-    <span
+    <div
       style={{
-        background: badge.background,
-        color: badge.color,
-        padding: "8px 14px",
-        borderRadius: "20px",
-        fontWeight: "600",
-        fontSize: "14px",
-        display: "inline-block",
-        minWidth: "75px",
+        background: colors[risk] + "20",
+        color: colors[risk],
+        padding: "6px 14px",
+        borderRadius: 20,
+        fontWeight: 600,
         textAlign: "center",
+        width: 80,
       }}
     >
-      {badge.text}
-    </span>
+      {risk}
+    </div>
   );
 }
 

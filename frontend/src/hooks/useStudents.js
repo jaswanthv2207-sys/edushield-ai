@@ -1,16 +1,36 @@
 import { useEffect, useState } from "react";
-import initialStudents from "../data/students";
-import { loadStudents, saveStudents } from "../utils/storage";
+import { getStudents } from "../services/studentService";
 
 export default function useStudents() {
-  const [students, setStudents] = useState(() => loadStudents(initialStudents));
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+
+      const data = await getStudents();
+      console.log(JSON.stringify(data[0], null, 2));
+
+      setStudents(data);
+
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    saveStudents(students);
-  }, [students]);
+    fetchStudents();
+  }, []);
 
   return {
     students,
-    setStudents,
+    loading,
+    error,
+    refreshStudents: fetchStudents,
   };
 }

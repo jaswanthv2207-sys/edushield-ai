@@ -1,250 +1,356 @@
+import CountUp from "react-countup";
+import { useEffect, useState } from "react";
 import MainLayout from "../layouts/MainLayout";
-import RiskBadge from "../components/RiskBadge";
-import useStudents from "../hooks/useStudents";
-import { useNavigate } from "react-router-dom";
+import { getDistrictAnalytics } from "../services/analyticsService";
+
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+
+import {
+  FaUsers,
+  FaUserGraduate,
+  FaMoneyBillWave,
+  FaTriangleExclamation,
+} from "react-icons/fa6";
 
 function Dashboard() {
-  const { students } = useStudents();
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate();
+  useEffect(() => {
+    async function loadDashboard() {
+      try {
+        const data = await getDistrictAnalytics();
+        console.log(data);
+        setAnalytics(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  const stats = [
+    loadDashboard();
+  }, []);
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <h2>Loading Dashboard...</h2>
+      </MainLayout>
+    );
+  }
+
+  const summary = analytics.summary;
+
+  const schoolData = analytics.school_metrics;
+
+  const pieData = [
     {
-      value: students.length,
-      label: "Students",
+      name: "Historical Dropouts",
+      value: summary.historical_dropouts,
     },
     {
-      value: students.filter((s) => s.risk >= 80).length,
-      label: "High Risk",
+      name: "Fee Defaulters",
+      value: summary.students_with_unpaid_fees,
     },
     {
-      value: students.filter((s) => s.risk >= 50 && s.risk < 80).length,
-      label: "Medium Risk",
-    },
-    {
-      value: students.filter((s) => s.risk < 50).length,
-      label: "Low Risk",
+      name: "Chronically Absent",
+      value: summary.students_chronically_absent,
     },
   ];
 
-  const highRiskStudents = students
-    .filter((student) => student.risk >= 80)
-    .slice(0, 5);
+  const COLORS = ["#2563EB", "#F59E0B", "#DC2626"];
 
   return (
     <MainLayout>
       <h1
         style={{
-          fontSize: "46px",
-          fontWeight: "700",
-          color: "#0F172A",
-          marginBottom: "40px",
-          letterSpacing: "-1px",
+          marginBottom: 30,
+          fontSize: 40,
+          fontWeight: 700,
         }}
       >
-        Dashboard
+        Government Dashboard
       </h1>
-
-      <p
-        style={{
-          color: "#64748B",
-          marginTop: "-20px",
-          marginBottom: "35px",
-          fontSize: "18px",
-        }}
-      >
-        Government of Rajasthan • AI-based Student Dropout Prediction System
-      </p>
-
-      {/* Stats Cards */}
 
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4,1fr)",
-          gap: "25px",
+          gap: 20,
         }}
       >
-        {stats.map((item) => (
-          <div
-            key={item.label}
+        <Card
+          title="Students"
+          value={summary.total_students_monitored}
+          color="#2563EB"
+          icon={<FaUsers />}
+        />
+
+        <Card
+          title="Historical Dropouts"
+          value={summary.historical_dropouts}
+          color="#DC2626"
+          icon={<FaUserGraduate />}
+        />
+
+        <Card
+          title="Unpaid Fees"
+          value={summary.students_with_unpaid_fees}
+          color="#F59E0B"
+          icon={<FaMoneyBillWave />}
+        />
+
+        <Card
+          title="Chronic Absences"
+          value={summary.students_chronically_absent}
+          color="#8B5CF6"
+          icon={<FaTriangleExclamation />}
+        />
+      </div>
+
+      <h2 style={{ marginTop: 45 }}>School Analytics</h2>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))",
+          gap: 25,
+          marginTop: 20,
+        }}
+      >
+        <div style={card}>
+          <h3>Students per School</h3>
+
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={schoolData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="School" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="total_students" fill="#2563EB" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={card}>
+          <h3>Dropout Indicators</h3>
+
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={pieData} dataKey="value" outerRadius={110} label>
+                {pieData.map((entry, index) => (
+                  <Cell key={index} fill={COLORS[index]} />
+                ))}
+              </Pie>
+
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 25,
+          marginTop: 25,
+        }}
+      >
+        <div style={card}>
+          <h3>Average Final Grade</h3>
+
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={schoolData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="School" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="avg_final_grade" fill="#10B981" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={card}>
+          <h3>Average Absences</h3>
+
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={schoolData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="School" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="avg_absences" fill="#F59E0B" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 25,
+          marginTop: 25,
+        }}
+      >
+        <div style={card}>
+          <h3>🏆 Government Insights</h3>
+
+          <ul
             style={{
-              background: "#fff",
-              borderRadius: "20px",
-              padding: "35px",
-              minHeight: "150px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              boxShadow: "0 6px 18px rgba(0,0,0,.08)",
+              lineHeight: 2,
+              paddingLeft: 20,
             }}
           >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "52px",
-                fontWeight: "700",
-                color: "#0F172A",
-              }}
-            >
-              {item.value}
-            </h2>
+            <li>
+              Total Students Monitored:
+              <b> {summary.total_students_monitored}</b>
+            </li>
 
-            <p
-              style={{
-                marginTop: "14px",
-                color: "#64748B",
-                fontSize: "18px",
-                fontWeight: "500",
-              }}
-            >
-              {item.label}
-            </p>
+            <li>
+              Historical Dropouts:
+              <b> {summary.historical_dropouts}</b>
+            </li>
+
+            <li>
+              Students with Unpaid Fees:
+              <b> {summary.students_with_unpaid_fees}</b>
+            </li>
+
+            <li>
+              Chronically Absent Students:
+              <b> {summary.students_chronically_absent}</b>
+            </li>
+          </ul>
+        </div>
+
+        <div style={card}>
+          <h3>🚨 Recommended Government Actions</h3>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
+            <ActionCard
+              color="#DC2626"
+              text="Identify students with chronic absenteeism."
+            />
+
+            <ActionCard
+              color="#F59E0B"
+              text="Counsel families with unpaid fees."
+            />
+
+            <ActionCard
+              color="#2563EB"
+              text="Increase monitoring in vulnerable schools."
+            />
+
+            <ActionCard
+              color="#16A34A"
+              text="Reward schools with strong academic performance."
+            />
           </div>
-        ))}
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          marginTop: "35px",
-          marginBottom: "35px",
-        }}
-      >
-        <button style={button} onClick={() => navigate("/students")}>
-          ➕ Add Student
-        </button>
-
-        <button style={button} onClick={() => navigate("/prediction")}>
-          🤖 Run AI Prediction
-        </button>
-
-        <button style={button} onClick={() => navigate("/analytics")}>
-          📊 View Analytics
-        </button>
-
-        <button style={button} onClick={() => navigate("/reports")}>
-          📄 Export Report
-        </button>
-      </div>
-
-      {/* High Risk Table */}
-
-      <div
-        style={{
-          marginTop: "45px",
-          background: "#fff",
-          borderRadius: "16px",
-          padding: "30px",
-          boxShadow: "0 4px 12px rgba(0,0,0,.08)",
-        }}
-      >
-        <h2
-          style={{
-            marginBottom: "25px",
-          }}
-        >
-          High Risk Students
-        </h2>
-
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-          }}
-        >
-          <thead>
-            <tr
-              style={{
-                background: "#F8FAFC",
-              }}
-            >
-              <th style={thStyle}>Name</th>
-              <th style={thStyle}>Attendance</th>
-              <th style={thStyle}>CGPA</th>
-              <th style={thStyle}>Risk</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {highRiskStudents.map((student, index) => (
-              <tr
-                key={student.name}
-                style={{
-                  background: index % 2 === 0 ? "#FFFFFF" : "#F8FAFC",
-                }}
-              >
-                <td
-                  style={{
-                    ...tdStyle,
-                    fontWeight: "600",
-                  }}
-                >
-                  {student.name}
-                </td>
-                <td style={tdStyle}>{student.attendance}</td>
-                <td style={tdStyle}>{student.cgpa}</td>
-                <td
-                  style={{
-                    ...tdStyle,
-                    fontWeight: "700",
-                    color:
-                      parseInt(student.risk) > 85
-                        ? "#DC2626"
-                        : parseInt(student.risk) > 75
-                          ? "#F59E0B"
-                          : "#16A34A",
-                  }}
-                >
-                  <RiskBadge risk={student.risk} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        </div>
       </div>
     </MainLayout>
   );
 }
 
-const thStyle = {
-  padding: "18px",
-  textAlign: "left",
-  background: "#F8FAFC",
-  color: "#475569",
-  fontWeight: "700",
-  fontSize: "15px",
-  borderBottom: "2px solid #E2E8F0",
+function Card({ title, value, color, icon }) {
+  return (
+    <div
+      style={{
+        background: "linear-gradient(135deg,#ffffff,#f8fafc)",
+        borderRadius: 20,
+        padding: 28,
+        boxShadow: "0 10px 30px rgba(37,99,235,.08)",
+        border: "1px solid #E2E8F0",
+      }}
+    >
+      {/* Icon */}
+      <div
+        style={{
+          fontSize: 30,
+          color,
+          marginBottom: 18,
+        }}
+      >
+        {icon}
+      </div>
+
+      {/* Title */}
+      <p
+        style={{
+          color: "#64748B",
+          margin: 0,
+          marginBottom: 15,
+        }}
+      >
+        {title}
+      </p>
+
+      {/* Value */}
+      <h1
+        style={{
+          color,
+          margin: 0,
+          fontSize: 42,
+        }}
+      >
+        {value}
+      </h1>
+    </div>
+  );
+}
+
+function ActionCard({ color, text }) {
+  return (
+    <div
+      style={{
+        borderLeft: `6px solid ${color}`,
+        background: "#F8FAFC",
+        padding: 15,
+        borderRadius: 10,
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
+const card = {
+  background: "#FFFFFF",
+  borderRadius: 18,
+  padding: 25,
+  boxShadow: "0 5px 15px rgba(0,0,0,.08)",
 };
 
-const tdStyle = {
-  padding: "18px",
-  fontSize: "15px",
-  color: "#334155",
+const th = {
+  padding: 18,
+  textAlign: "left",
+  background: "#2563EB",
+  color: "white",
+};
+
+const td = {
+  padding: 18,
   borderBottom: "1px solid #E2E8F0",
 };
 
 export default Dashboard;
-
-const buttonStyle = {
-  background: "#2563EB",
-  color: "white",
-  border: "none",
-  padding: "14px 20px",
-  borderRadius: "10px",
-  cursor: "pointer",
-  fontWeight: "600",
-};
-
-const button = {
-  background: "#2563EB",
-  color: "white",
-  border: "none",
-  borderRadius: 10,
-  padding: "12px 22px",
-  cursor: "pointer",
-  fontWeight: 600,
-  fontSize: 15,
-  marginRight: 15,
-};
