@@ -4,13 +4,11 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaHome,
   FaUserGraduate,
-  FaRobot,
   FaChartBar,
-  FaComments,
   FaFileAlt,
   FaSignOutAlt,
+  FaBrain,
   FaBars,
-  FaShieldAlt,
 } from "react-icons/fa";
 
 const menu = [
@@ -27,7 +25,12 @@ const menu = [
   {
     name: "AI Prediction",
     path: "/prediction",
-    icon: <FaRobot />,
+    icon: <FaBrain />,
+  },
+  {
+    name: "Manual Prediction",
+    path: "/manual-prediction",
+    icon: <FaBrain />,
   },
   {
     name: "Analytics",
@@ -37,7 +40,7 @@ const menu = [
   {
     name: "Counselling",
     path: "/counselling",
-    icon: <FaComments />,
+    icon: <FaUserGraduate />,
   },
   {
     name: "Reports",
