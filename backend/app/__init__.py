@@ -1,0 +1,1 @@
+"""EduShield AI Backend Application."""
