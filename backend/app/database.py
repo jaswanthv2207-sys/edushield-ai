@@ -16,15 +16,10 @@ elif DATABASE_URL.startswith("postgresql://"):
 elif DATABASE_URL.startswith("postgresql+psycopg://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql+psycopg://", "postgresql+psycopg2://", 1)
 
-# Remote managed Postgres requires SSL; add sslmode=require unless already set
-# or the host is a local development database.
-if "sslmode=" not in DATABASE_URL:
-    from urllib.parse import urlparse
-
-    _scheme_stripped = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql://", 1)
-    _host = urlparse(_scheme_stripped).hostname or ""
-    if _host and _host not in ("localhost", "127.0.0.1", "::1"):
-        DATABASE_URL += ("&" if "?" in DATABASE_URL else "?") + "sslmode=require"
+# SSL: no forcing here. psycopg2 defaults to sslmode=prefer, which negotiates
+# SSL when the server supports it (managed providers like Render) and falls
+# back to plain TCP for local/dev servers. Add ?sslmode=require explicitly in
+# DATABASE_URL when a provider mandates it.
 
 engine = create_engine(
     DATABASE_URL,

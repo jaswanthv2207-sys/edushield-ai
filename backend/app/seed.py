@@ -206,6 +206,16 @@ def seed_database():
         db.commit()
         print(f"Created {len(students)} students")
 
+        # Generate initial AI predictions so risk dashboards are populated on
+        # first boot (the predictor self-trains when no model file exists).
+        try:
+            from app.services.prediction_service import predict_bulk
+            predictions = predict_bulk(db, [s.id for s in students])
+            print(f"Generated {len(predictions)} initial predictions")
+        except Exception as e:
+            db.rollback()
+            print(f"Warning: Could not generate seed predictions: {e}")
+
         print("Database seeded successfully!")
         print("\nDefault login credentials:")
         print("  Admin: admin@edushield.ai / Admin@123")
