@@ -149,3 +149,13 @@ async def spa_fallback(full_path: str, request: Request):
         return FileResponse(STATIC_DIR / "index.html")
 
     return JSONResponse({"detail": "Not Found"}, status_code=404)
+
+
+@app.api_route(
+    "/{full_path:path}",
+    methods=["POST", "PUT", "PATCH", "DELETE"],
+    include_in_schema=False,
+)
+async def non_get_fallback(full_path: str):
+    """Unknown non-API/non-GET paths return JSON 404 (not a confusing 405)."""
+    return JSONResponse({"detail": "Not Found"}, status_code=404)
