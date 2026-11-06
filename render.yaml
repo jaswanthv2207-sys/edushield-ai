@@ -1,6 +1,11 @@
-# Render blueprint: one web service (Docker) + managed Postgres.
+# Render blueprint: one web service (Docker).
 # Dashboard -> New -> Blueprint -> point at this repo ->
 # Render reads this file and provisions everything.
+#
+# DATABASE_URL uses SQLite instead of a managed Postgres instance:
+# Render free Postgres expires after ~30 days (which crash-looped the
+# app when edushield-db expired). SQLite is free forever and the app
+# re-seeds demo data automatically whenever the ephemeral disk resets.
 services:
   - type: web
     name: edushield-ai
@@ -11,14 +16,6 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: edushield-db
-          property: connectionString
+        value: "sqlite:////app/edushield.db"
       - key: DEBUG
         value: "false"
-
-databases:
-  - name: edushield-db
-    plan: free
-    databaseName: edushield
-    user: edushield
